@@ -190,3 +190,21 @@
             line-height: 1.5;
         }
     </style>
+    </head>
+    <body>
+        <header>
+            <h1> Card Counter </h1>
+            <div class="status"><span class="dot" id="dot"></span>
+                <span id="statustext">Connecting..</span>
+            </div>
+        </header>
+
+    <main> 
+        <section class="panel feed">
+            <img id="feed" alt="Live Card Detection Stream">
+            <div class="offline" id="offline">
+                Cant reach the stream, connect with <code>python server.py</code>
+            </div>
+        </section>
+    </main>
+    </body>
