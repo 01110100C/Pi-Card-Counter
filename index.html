@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Counter</title>
+    <style>
+        :root { 
+            --bg: #0f1419; --panel: #1a212a; 
+            --border: #2a3441; --text: #e6edf3; 
+            --accent: #3fb68b; --red: #ef6461; 
+            --amber: #e8b04a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 20px; 
+            background: var(--bg); 
+            color: var(--text);
+            font-family: system-ui, -apple-system, "segoe ui", Roboto, Ubuntu, "Helvetica Neue", sans-serif;
+        }
+        header {
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            margin-bottom: 16px; 
+        }
+
+        .status { font-size: .85rem; 
+            color: var(--muted);
+            display: flex; 
+            align-items: center; 
+            gap: 8;
+        }
+        .dot { 
+            width: 10px; 
+            height: 10px; 
+            border-radius: 50%; 
+            background: var(--red);
+        }
+        .dot.live { background: var(--accent); }
+
+        main { display: grid; 
+            grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); 
+            gap: 16px; }
+
+        @media (max-width: 800px) { main { grid-template-columns: 1fr; }}
+
+        .panel { background: var(--panel); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            padding: 16px; }
+
+        .feed img { display: block; 
+            width: 100%; 
+            height: auto; 
+            min-height: 200px; 
+        }
+
+        .offline {
+            position: absolute;
+            inset: 0; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            padding: 20px; 
+            background: rbga(0,0,0,.8);
+            color: var(--muted);
+        }
+
+        .offline.show { display: flex; }
+
+        .counts { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 16px; 
+
+        }
+
+        .stat .label { 
+            font-size: .75rem; 
+            color: var(--muted); 
+            text-transform: uppercase; 
+            letter-spacing: .05em; 
+        }
+        
+        .stat .value {
+            font-size: 2.2rem; 
+            font-weight: 700; 
+            font-variant-numeric: tabular-nums; 
+        }
+
+        .stat.small .value { 
+            font-size: 1.2rem; 
+            font-weight: 600; 
+
+        }
+
+        .pos { 
+            color: var(--accent);
+        } .neg {
+            color: var(--red);
+        }
+
+        .signal {
+            margin-bottom: 16px; 
+            padding: 8px 12px;
+            border-radius: 8px; 
+            background: var(--bg);
+            font-size: .9rem; 
+            text-align: center;
+        }
+
+        h2 {
+            font-size: .8rem;
+            color: var(--muted); 
+            text-transform: uppercase;
+            letter-spacing: .05rem;
+            margin: 0 0 8px;
+        }
+
+        #history {
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 6px;
+            min-height: 40px; 
+        }
+
+        .card { 
+            background: var(--bg); 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            padding: 4px 8px; 
+            font-weight: 600; 
+            font-size: .95rem;
+        }
+
+        .card.red {
+            color: var(--red); 
+        }
+
+        .card small {
+            color: var(--muted); 
+            font-weight: 400; 
+            margin-left: 4px; 
+        }
+
+        .empty {
+            color: var(--muted); 
+            font-size: .9rem; 
+        }
+
+        .actions {
+            margin-top: 16px; 
+            display: flex; 
+            gap: 8px; 
+        }
+
+        button {
+            flex: 1; 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+            background: var(--bg); 
+            color: var(--text); 
+            font-size: .9rem; 
+            cursor: pointer; 
+        }
+
+        button:hover { 
+            border-color: var(--accent); 
+        }
+
+        select { 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+            background: var(--bg); 
+            color: var(--text); 
+            font-size: .9rem; 
+        }
+
+        .legend {
+            margin-top: 16px; 
+            font-size: .8rem; 
+            color: var(--muted); 
+            line-height: 1.5;
+        }
+    </style>

@@ -22,9 +22,9 @@ path = os.path.dirname(os.path.abspath(__file__))
 train_ranks = cards.load_ranks( path + '/Card_Imgs/')
 train_suits = cards.load_suits( path + '/Card_Imgs/')
 
-cam_quit == 0; 
+cam_quit = 0
 
-while came_quit == 0:
+while cam_quit == 0:
      image = livestream.get_frame()
      t1 = cv2.getTickCount()
      pre_proc = cards.preprocess_image(image)
@@ -66,7 +66,7 @@ if key == ord("q"):
         
 
 cv2.destroyAllWindows()
-videostream.stop()
+LiveStream.stop()
           
               
             
