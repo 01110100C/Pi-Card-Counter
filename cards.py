@@ -108,6 +108,106 @@ def find_cards(thresh):
     return card_conts, [1] * len(card_conts)
         
 
-   def flattener(image, pts, w, h):
+def flattener(image, pts, w, h):
+    pts = np.float32(pts).reshape(4, 2)
+    s = pts.sum(axis=1)
+    diff = np.diff(pts, axis=1).ravel()
+    t1, br = pts[np.argmin(s)], pts[np.argmax(s)]
+    tr, b1 = pts[np.argmin(diff)], pts[np.argmax(diff)]
+
+    if w <= 0.8 * h: 
+        rect = [t1, tr, br, b1]
+    elif w >= 1.2 * h: 
+        rect = [b1, br, tr, t1]
+    else:
+        if pts[1][1] <= pts[3][1]:
+            rect = [pts[1], pts[0], pts[3], pts[2]]
+        else:
+            rect = [pts[0], pts[1], pts[2], pts[3]]
+
+    dst = np.float32([[0, 0], [card_width - 1, 0], [card_width - 1, card_height - 1], [0, card_height - 1]])
+    M = cv2.getPerspectiveTransform(rect, dst)
+    warp = cv2.warpPerspective(image, M, (card_width, card_height))
+    return cv2.cvtColor(warp, cv2.COLOR_BGR2GRAY)
+
+def _largest_symbol(binary_img, out_w, out_h):
     
+    conts, _ = cv2.findContours(binary_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if len(conts) == 0:
+        return []
+    conts = sorted(conts, key=cv2.contourArea, reverse=True)
+    x, y, w, h = cv2.boundingRect(conts[0])
+    return cv2.resize(binary_img[y:y + h, x:x + w], (out_w, out_h), 0, 0)
+ 
+ 
+def preprocess_card(contour, image):
+    
+    card = QueryCard()
+    card.contour = contour
+ 
+    peri = cv2.arcLength(contour, True)
+    approx = cv2.approxPolyDP(contour, 0.01 * peri, True)
+    card.corner_pts = np.float32(approx)
+ 
+    x, y, w, h = cv2.boundingRect(contour)
+    card.width, card.height = w, h
+ 
+    center = np.sum(card.corner_pts, axis=0)[0] / len(card.corner_pts)
+    card.center = [int(center[0]), int(center[1])]
+ 
+    card.warp = flattener(image, card.corner_pts, w, h)
+ 
+    # Zoom in on the top-left corner where rank and suit live
+    corner = card.warp[0:corner_height, 0:corner_width]
+    corner_zoom = cv2.resize(corner, (0, 0), fx=4, fy=4)
+ 
+    white_level = int(corner_zoom[15, (corner_width * 4) // 2])
+    thresh_level = max(white_level - card_thresh, 1)
+    _, corner_thresh = cv2.threshold(corner_zoom, thresh_level, 255,
+                                     cv2.THRESH_BINARY_INV)
+ 
+    rank_roi = corner_thresh[20:185, 0:128]
+    suit_roi = corner_thresh[186:336, 0:128]
+ 
+    card.rank_img = _largest_symbol(rank_roi, rank_width, rank_height)
+    card.suit_img = _largest_symbol(suit_roi, suit_width, suit_height)
+    return card
+ 
+ 
+# ---------- Matching ----------
+def match_card(card, train_ranks, train_suits):
+  
+    best_rank, best_suit = "Unknown", "Unknown"
+    best_rank_diff, best_suit_diff = 10000, 10000
+ 
+    if len(card.rank_img) != 0 and len(card.suit_img) != 0:
+        for t in train_ranks:
+            diff = int(np.sum(cv2.absdiff(card.rank_img, t.img)) / 255)
+            if diff < best_rank_diff:
+                best_rank_diff, best_rank = diff, t.name
+ 
+        for t in train_suits:
+            diff = int(np.sum(cv2.absdiff(card.suit_img, t.img)) / 255)
+            if diff < best_suit_diff:
+                best_suit_diff, best_suit = diff, t.name
+ 
+    if best_rank_diff >= rank_diff_max:
+        best_rank = "Unknown"
+    if best_suit_diff >= suit_diff_max:
+        best_suit = "Unknown"
+ 
+    return best_rank, best_suit, best_rank_diff, best_suit_diff
+ 
+ 
+# Drawing 
+def draw_results(image, card):
+    x, y = card.center
+    cv2.circle(image, (x, y), 5, (255, 0, 0), -1)
+ 
+    for offset, text in ((-20, card.best_rank), (25, card.best_suit)):
+        cv2.putText(image, text, (x - 60, y + offset), font, 1, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(image, text, (x - 60, y + offset), font, 1, (50, 200, 200), 2, cv2.LINE_AA)
+    return image
+
+
         
